@@ -162,3 +162,7 @@ typings/
 
 /es/
 /lib/
+obj/
+dist/
+
+demo/src/lib/

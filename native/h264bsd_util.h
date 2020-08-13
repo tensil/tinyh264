@@ -110,17 +110,64 @@
 /* macro for debug printing, used only if compiler flag _DEBUG_PRINT is
  * defined */
 #ifdef _DEBUG_PRINT
-#define DEBUG(args) printf args
+#define DEBUG(args) {                     \
+  printf("%s(%d): ", __FILE__, __LINE__); \
+  printf args; \
+  printf("\n");              \
+}
+
+#define LOG(...) {                \
+  fprintf(stdout,"%s(%d) LOG: ", __FILE__, __LINE__);  \
+  fprintf(stdout, __VA_ARGS__);              \
+  fprintf(stdout, "\n");              \
+}
+
 #else
-#define DEBUG(args)
+
+#define DEBUG(args) {}
+#define LOG(...) {}
+
 #endif
 
 /* macro for error printing, used only if compiler flag _ERROR_PRINT is
  * defined */
 #ifdef _ERROR_PRINT
-#define EPRINT(msg) fprintf(stderr,"ERROR: %s\n",msg)
+
+#define EPRINT(...) {                \
+  fprintf(stderr,"%s(%d) ERROR: ", __FILE__, __LINE__);  \
+  fprintf(stderr, __VA_ARGS__);              \
+  fprintf(stderr, "\n");              \
+}
+
 #else
-#define EPRINT(msg)
+
+#define EPRINT(...) {}
+
+#endif
+
+/* Macro for checking end of stream
+ */
+#define END_OF_STREAM_CHECK(tmp) {  \
+  if ((tmp) == END_OF_STREAM) {     \
+      EPRINT("END_OF_STREAM");      \
+      return(tmp);                  \
+  }                                 \
+}
+
+#ifdef _DEBUG_PRINT
+
+void printArray(u8* arr, u32 size);
+
+void scoped(const char** pVariable);
+
+# define TRACE_FUNC() \
+  const char* _func_tracer __attribute__((cleanup (scoped))) = __PRETTY_FUNCTION__; \
+  printf("%s ENTERED\n", _func_tracer);
+
+#else
+
+void printArray(u8* arr, u32 size);
+# define TRACE_FUNC() {}
 #endif
 
 /* macro to get smaller of two values */

@@ -27,10 +27,14 @@ all: OPTS += -s AGGRESSIVE_VARIABLE_ELIMINATION=1
 
 debug: OPTS += -g4
 debug: OPTS += -D_ERROR_PRINT
+# debug: OPTS += -D_RANGE_CHECK
+# debug: OPTS += -D_DEBUG_PRINT
+debug: OPTS += -D_ASSERT_USED
+
 # debug: OPTS += -s DEMANGLE_SUPPORT=1
 # debug: OPTS += -s EXCEPTION_DEBUG=1
-# all: OPTS += -s ASSERTIONS=1
-# debug: OPTS += -s ASSERTIONS=2
+all: OPTS += -s ASSERTIONS=1			# =0 disables all assertions
+debug: OPTS += -s ASSERTIONS=2
 # all: OPTS += -s DISABLE_EXCEPTION_CATCHING=1
 # debug: OPTS += -s DISABLE_EXCEPTION_CATCHING=2
 
@@ -50,6 +54,8 @@ OPTS += -s NO_FILESYSTEM=1
 
 OPTS += -s EXPORTED_FUNCTIONS=["_malloc","_free","_h264bsdAlloc","_h264bsdFree","_h264bsdInit","_h264bsdDecode","_h264bsdShutdown"]
 OPTS += -s EXTRA_EXPORTED_RUNTIME_METHODS=[getValue]
+
+debug: LDFLAGS += --source-map-base http://localhost:3000/js/
 
 ##---------------------------------------------------------------------
 ## FINAL BUILD FLAGS

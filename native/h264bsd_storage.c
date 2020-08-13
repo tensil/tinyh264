@@ -126,6 +126,7 @@ void h264bsdInitStorage(storage_t *pStorage)
 
 u32 h264bsdStoreSeqParamSet(storage_t *pStorage, seqParamSet_t *pSeqParamSet)
 {
+  // TRACE_FUNC();
 
 /* Variables */
 
@@ -296,6 +297,9 @@ u32 h264bsdStorePicParamSet(storage_t *pStorage, picParamSet_t *pPicParamSet)
 
 u32 h264bsdActivateParamSets(storage_t *pStorage, u32 ppsId, u32 isIdr)
 {
+  // TRACE_FUNC()
+  // LOG("pStorage->activeSpsId=%d, pStorage->picStarted=%d, pStorage->pendingActivation=%d, ppsId=%d, isIdr=%d", 
+  //   pStorage->activeSpsId, pStorage->picStarted, pStorage->pendingActivation, ppsId, isIdr);
 
 /* Variables */
 
@@ -323,6 +327,8 @@ u32 h264bsdActivateParamSets(storage_t *pStorage, u32 ppsId, u32 isIdr)
     /* first activation part1 */
     if (pStorage->activePpsId == MAX_NUM_PIC_PARAM_SETS)
     {
+        // LOG("first activation part1");
+        
         pStorage->activePpsId = ppsId;
         pStorage->activePps = pStorage->pps[ppsId];
         pStorage->activeSpsId = pStorage->activePps->seqParameterSetId;
@@ -339,6 +345,8 @@ u32 h264bsdActivateParamSets(storage_t *pStorage, u32 ppsId, u32 isIdr)
     /* first activation part2 */
     else if (pStorage->pendingActivation)
     {
+        // LOG("first activation part2");
+
         pStorage->pendingActivation = HANTRO_FALSE;
 
         FREE(pStorage->mb);
@@ -381,10 +389,12 @@ u32 h264bsdActivateParamSets(storage_t *pStorage, u32 ppsId, u32 isIdr)
     }
     else if (ppsId != pStorage->activePpsId)
     {
+        // LOG("ppsId=%d != pStorage->activePpsId=%d", ppsId, pStorage->activePpsId);
+        
         /* sequence parameter set shall not change but before an IDR picture */
         if (pStorage->pps[ppsId]->seqParameterSetId != pStorage->activeSpsId)
         {
-            DEBUG(("SEQ PARAM SET CHANGING...\n"));
+            DEBUG(("SEQ PARAM SET CHANGING..."));
             if (isIdr)
             {
                 pStorage->activePpsId = ppsId;
@@ -403,7 +413,7 @@ u32 h264bsdActivateParamSets(storage_t *pStorage, u32 ppsId, u32 isIdr)
             }
             else
             {
-                DEBUG(("TRYING TO CHANGE SPS IN NON-IDR SLICE\n"));
+                DEBUG(("TRYING TO CHANGE SPS IN NON-IDR SLICE"));
                 return(HANTRO_NOK);
             }
         }

@@ -68,6 +68,7 @@
 
 u32 h264bsdDecodeNalUnit(strmData_t *pStrmData, nalUnit_t *pNalUnit)
 {
+    // TRACE_FUNC();
 
 /* Variables */
 
@@ -81,11 +82,10 @@ u32 h264bsdDecodeNalUnit(strmData_t *pStrmData, nalUnit_t *pNalUnit)
 
     /* forbidden_zero_bit (not checked to be zero, errors ignored) */
     tmp = h264bsdGetBits(pStrmData, 1);
-    /* Assuming that NAL unit starts from byte boundary ­> don't have to check
+    /* Assuming that NAL unit starts from byte boundary ï¿½> don't have to check
      * following 7 bits for END_OF_STREAM */
-    if (tmp == END_OF_STREAM)
-        return(HANTRO_NOK);
-
+    END_OF_STREAM_CHECK(tmp);
+ 
     tmp = h264bsdGetBits(pStrmData, 2);
     pNalUnit->nalRefIdc = tmp;
 
@@ -95,6 +95,8 @@ u32 h264bsdDecodeNalUnit(strmData_t *pStrmData, nalUnit_t *pNalUnit)
     /* data partitioning NAL units not supported */
     if ( (tmp == 2) || (tmp == 3) || (tmp == 4) )
     {
+        EPRINT("data partitioning NAL units not supported");
+
         return(HANTRO_NOK);
     }
 
@@ -102,6 +104,7 @@ u32 h264bsdDecodeNalUnit(strmData_t *pStrmData, nalUnit_t *pNalUnit)
     if ( ( (tmp == NAL_SEQ_PARAM_SET) || (tmp == NAL_PIC_PARAM_SET) ||
            (tmp == NAL_CODED_SLICE_IDR) ) && (pNalUnit->nalRefIdc == 0) )
     {
+        EPRINT("nal_ref_idc shall not be zero for these nal_unit_types ");
         return(HANTRO_NOK);
     }
     /* nal_ref_idc shall be zero for these nal_unit_types */
@@ -109,6 +112,7 @@ u32 h264bsdDecodeNalUnit(strmData_t *pStrmData, nalUnit_t *pNalUnit)
                 (tmp == NAL_END_OF_SEQUENCE) || (tmp == NAL_END_OF_STREAM) ||
                 (tmp == NAL_FILLER_DATA) ) && (pNalUnit->nalRefIdc != 0) )
     {
+      EPRINT("nal_ref_idc shall be zero for these nal_unit_types");
         return(HANTRO_NOK);
     }
 

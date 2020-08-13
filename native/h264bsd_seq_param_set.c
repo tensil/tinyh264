@@ -83,6 +83,7 @@ static u32 GetDpbSize(u32 picSizeInMbs, u32 levelIdc);
 
 u32 h264bsdDecodeSeqParamSet(strmData_t *pStrmData, seqParamSet_t *pSeqParamSet)
 {
+  // TRACE_FUNC();
 
 /* Variables */
 
@@ -97,11 +98,11 @@ u32 h264bsdDecodeSeqParamSet(strmData_t *pStrmData, seqParamSet_t *pSeqParamSet)
 
     /* profile_idc */
     tmp = h264bsdGetBits(pStrmData, 8);
-    if (tmp == END_OF_STREAM)
-        return(HANTRO_NOK);
+    END_OF_STREAM_CHECK(tmp);
+
     if (tmp != 66)
     {
-        DEBUG(("NOT BASELINE PROFILE %d\n", tmp));
+        DEBUG(("NOT BASELINE PROFILE %d", tmp));
     }
     pSeqParamSet->profileIdc = tmp;
 
@@ -112,17 +113,17 @@ u32 h264bsdDecodeSeqParamSet(strmData_t *pStrmData, seqParamSet_t *pSeqParamSet)
     /* constrained_set2_flag */
     tmp = h264bsdGetBits(pStrmData, 1);
 
-    if (tmp == END_OF_STREAM)
-        return(HANTRO_NOK);
+    END_OF_STREAM_CHECK(tmp);
+
 
     /* reserved_zero_5bits, values of these bits shall be ignored */
     tmp = h264bsdGetBits(pStrmData, 5);
-    if (tmp == END_OF_STREAM)
-        return(HANTRO_NOK);
+    END_OF_STREAM_CHECK(tmp);
+
 
     tmp = h264bsdGetBits(pStrmData, 8);
-    if (tmp == END_OF_STREAM)
-        return(HANTRO_NOK);
+    END_OF_STREAM_CHECK(tmp);
+
     pSeqParamSet->levelIdc = tmp;
 
     tmp = h264bsdDecodeExpGolombUnsigned(pStrmData,
@@ -175,8 +176,8 @@ u32 h264bsdDecodeSeqParamSet(strmData_t *pStrmData, seqParamSet_t *pSeqParamSet)
     else if (pSeqParamSet->picOrderCntType == 1)
     {
         tmp = h264bsdGetBits(pStrmData, 1);
-        if (tmp == END_OF_STREAM)
-            return(HANTRO_NOK);
+        END_OF_STREAM_CHECK(tmp);
+
         pSeqParamSet->deltaPicOrderAlwaysZeroFlag = (tmp == 1) ?
                                         HANTRO_TRUE : HANTRO_FALSE;
 
@@ -233,8 +234,8 @@ u32 h264bsdDecodeSeqParamSet(strmData_t *pStrmData, seqParamSet_t *pSeqParamSet)
     }
 
     tmp = h264bsdGetBits(pStrmData, 1);
-    if (tmp == END_OF_STREAM)
-        return(HANTRO_NOK);
+    END_OF_STREAM_CHECK(tmp);
+
     pSeqParamSet->gapsInFrameNumValueAllowedFlag = (tmp == 1) ?
                                         HANTRO_TRUE : HANTRO_FALSE;
 
@@ -250,8 +251,8 @@ u32 h264bsdDecodeSeqParamSet(strmData_t *pStrmData, seqParamSet_t *pSeqParamSet)
 
     /* frame_mbs_only_flag, shall be 1 for baseline profile */
     tmp = h264bsdGetBits(pStrmData, 1);
-    if (tmp == END_OF_STREAM)
-        return(HANTRO_NOK);
+    END_OF_STREAM_CHECK(tmp);
+
     if (!tmp)
     {
         EPRINT("frame_mbs_only_flag");
@@ -260,12 +261,12 @@ u32 h264bsdDecodeSeqParamSet(strmData_t *pStrmData, seqParamSet_t *pSeqParamSet)
 
     /* direct_8x8_inference_flag */
     tmp = h264bsdGetBits(pStrmData, 1);
-    if (tmp == END_OF_STREAM)
-        return(HANTRO_NOK);
+    END_OF_STREAM_CHECK(tmp);
+
 
     tmp = h264bsdGetBits(pStrmData, 1);
-    if (tmp == END_OF_STREAM)
-        return(HANTRO_NOK);
+    END_OF_STREAM_CHECK(tmp);
+
     pSeqParamSet->frameCroppingFlag = (tmp == 1) ? HANTRO_TRUE : HANTRO_FALSE;
 
     if (pSeqParamSet->frameCroppingFlag)
@@ -306,8 +307,8 @@ u32 h264bsdDecodeSeqParamSet(strmData_t *pStrmData, seqParamSet_t *pSeqParamSet)
     value = GetDpbSize(tmp, pSeqParamSet->levelIdc);
     if (value == INVALID_DPB_SIZE || pSeqParamSet->numRefFrames > value)
     {
-        DEBUG(("WARNING! Invalid DPB size based on SPS Level!\n"));
-        DEBUG(("WARNING! Using num_ref_frames =%d for DPB size!\n",
+        DEBUG(("WARNING! Invalid DPB size based on SPS Level!"));
+        DEBUG(("WARNING! Using num_ref_frames =%d for DPB size!",
                         pSeqParamSet->numRefFrames));
         value = pSeqParamSet->numRefFrames;
     }
@@ -350,6 +351,12 @@ u32 h264bsdDecodeSeqParamSet(strmData_t *pStrmData, seqParamSet_t *pSeqParamSet)
     }
 
     tmp = h264bsdRbspTrailingBits(pStrmData);
+
+
+// #ifdef _DEBUG_PRINT
+//     DEBUG(("pSeqParamSet="));
+//     h264bsdPrintSeqParamSet(pSeqParamSet);
+// #endif 
 
     /* ignore possible errors in trailing bits of parameters sets */
     return(HANTRO_OK);
@@ -576,3 +583,19 @@ u32 h264bsdCompareSeqParamSets(seqParamSet_t *pSps1, seqParamSet_t *pSps2)
     return 1;
 }
 
+void h264bsdPrintSeqParamSet(seqParamSet_t *pSps) {
+  LOG(
+  "{ profileIdc=%d, levelIdc=%d, seqParameterSetId=%d, maxFrameNum=%d\n"
+  ", picOrderCntType=%d, maxPicOrderCntLsb=%d,deltaPicOrderAlwaysZeroFlag=%d, offsetForNonRefPic=%d\n"
+  ", offsetForTopToBottomField=%d, numRefFramesInPicOrderCntCycle=%d, offsetForRefFrame=%d, numRefFrames=%d\n"
+  ", gapsInFrameNumValueAllowedFlag=%d, picWidthInMbs=%d, picHeightInMbs=%d\n"
+  ", frameCroppingFlag=%d, frameCropLeftOffset=%d, frameCropRightOffset=%d, frameCropTopOffset=%d, frameCropBottomOffset=%d\n"
+  ", vuiParametersPresentFlag=%d, vuiParameters=%d, maxDpbSize=%d}\n"
+  , pSps->profileIdc, pSps->levelIdc, pSps->seqParameterSetId, pSps->maxFrameNum
+  , pSps->picOrderCntType, pSps->maxPicOrderCntLsb, pSps->deltaPicOrderAlwaysZeroFlag, pSps->offsetForNonRefPic
+  , pSps->offsetForTopToBottomField, pSps->numRefFramesInPicOrderCntCycle, *pSps->offsetForRefFrame, pSps->numRefFrames
+  , pSps->gapsInFrameNumValueAllowedFlag, pSps->picWidthInMbs, pSps->picHeightInMbs
+  , pSps->frameCroppingFlag, pSps->frameCropLeftOffset, pSps->frameCropRightOffset, pSps->frameCropTopOffset, pSps->frameCropBottomOffset
+  , pSps->vuiParametersPresentFlag, (u32)pSps->vuiParameters, pSps->maxDpbSize
+  );
+};

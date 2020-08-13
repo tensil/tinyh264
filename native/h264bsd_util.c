@@ -281,3 +281,27 @@ void h264bsdSetCurrImageMbPointers(image_t *image, u32 mbNum)
     image->cb = (u8*)(image->data + picSize * 256 + tmp * 64 + col * 8);
     image->cr = (u8*)(image->cb + picSize * 64);
 }
+
+#ifdef _DEBUG_PRINT
+
+void scoped(const char** funcName)
+{
+  printf("%s EXITED\n", *funcName);
+}
+
+void printArray(u8* arr, u32 size) {
+  for(u32 ii=0; ii<size; ++ii, ++arr) {
+    if((ii)%16==0) printf("\n%d: ", ii/16);
+    printf("0x%x,", *arr);
+  }
+  printf("\n");
+}
+
+#else
+void printArray(u8* arr, u32 size)
+{
+  
+}
+
+
+#endif

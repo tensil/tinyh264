@@ -168,3 +168,4 @@ dist/
 demo/src/lib/
 src/TinyH264.wasm.asset
 src/TinyH264.js
+.vscode/

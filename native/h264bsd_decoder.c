@@ -83,6 +83,7 @@
 
 u32 h264bsdInit(storage_t *pStorage, u32 noOutputReordering)
 {
+    // TRACE_FUNC();
 
 /* Variables */
     u32 size;
@@ -142,6 +143,7 @@ u32 h264bsdInit(storage_t *pStorage, u32 noOutputReordering)
 u32 h264bsdDecodeInternal(storage_t *pStorage, u8 *byteStrm, u32 len,
     u32 *readBytes)
 {
+    // TRACE_FUNC();
 
 /* Variables */
 
@@ -182,13 +184,13 @@ u32 h264bsdDecodeInternal(storage_t *pStorage, u8 *byteStrm, u32 len,
     if (tmp != HANTRO_OK)
     {
         EPRINT("NAL_UNIT");
-        return(H264BSD_ERROR);
+        RETURN_264BSD_CODE(tmp);
     }
 
     /* Discard unspecified, reserved, SPS extension and auxiliary picture slices */
     if(nalUnit.nalUnitType == 0 || nalUnit.nalUnitType >= 13)
     {
-        DEBUG(("DISCARDED NAL (UNSPECIFIED, REGISTERED, SPS ext or AUX slice)\n"));
+        DEBUG(("DISCARDED NAL (UNSPECIFIED, REGISTERED, SPS ext or AUX slice)"));
         return(H264BSD_RDY);
     }
 
@@ -208,7 +210,7 @@ u32 h264bsdDecodeInternal(storage_t *pStorage, u8 *byteStrm, u32 len,
 
     if ( accessUnitBoundaryFlag )
     {
-        DEBUG(("Access unit boundary\n"));
+        DEBUG(("Access unit boundary"));
         /* conceal if picture started and param sets activated */
         if (pStorage->picStarted && pStorage->activeSps != NULL)
         {
@@ -253,20 +255,20 @@ u32 h264bsdDecodeInternal(storage_t *pStorage, u8 *byteStrm, u32 len,
         switch (nalUnit.nalUnitType)
         {
             case NAL_SEQ_PARAM_SET:
-                DEBUG(("SEQ PARAM SET\n"));
+                DEBUG(("SEQ PARAM SET"));
                 tmp = h264bsdDecodeSeqParamSet(&strm, &seqParamSet);
                 if (tmp != HANTRO_OK)
                 {
                     EPRINT("SEQ_PARAM_SET");
                     FREE(seqParamSet.offsetForRefFrame);
                     FREE(seqParamSet.vuiParameters);
-                    return(H264BSD_ERROR);
+                    RETURN_264BSD_CODE(tmp);
                 }
                 tmp = h264bsdStoreSeqParamSet(pStorage, &seqParamSet);
                 break;
 
             case NAL_PIC_PARAM_SET:
-                DEBUG(("PIC PARAM SET\n"));
+                DEBUG(("PIC PARAM SET"));
                 tmp = h264bsdDecodePicParamSet(&strm, &picParamSet);
                 if (tmp != HANTRO_OK)
                 {
@@ -275,16 +277,16 @@ u32 h264bsdDecodeInternal(storage_t *pStorage, u8 *byteStrm, u32 len,
                     FREE(picParamSet.topLeft);
                     FREE(picParamSet.bottomRight);
                     FREE(picParamSet.sliceGroupId);
-                    return(H264BSD_ERROR);
+                    RETURN_264BSD_CODE(tmp);
                 }
                 tmp = h264bsdStorePicParamSet(pStorage, &picParamSet);
                 break;
 
             case NAL_CODED_SLICE_IDR:
-                DEBUG(("IDR "));
+                LOG("IDR ");
                 /* fall through */
             case NAL_CODED_SLICE:
-                DEBUG(("SLICE HEADER\n"));
+                LOG("SLICE HEADER");
 
                 /* picture successfully finished and still decoding same old
                  * access unit -> no need to decode redundant slices */
@@ -292,6 +294,8 @@ u32 h264bsdDecodeInternal(storage_t *pStorage, u8 *byteStrm, u32 len,
                     return(H264BSD_RDY);
 
                 pStorage->picStarted = HANTRO_TRUE;
+
+                // LOG("h264bsdIsStartOfPicture=%d", h264bsdIsStartOfPicture(pStorage));
 
                 if (h264bsdIsStartOfPicture(pStorage))
                 {
@@ -322,6 +326,9 @@ u32 h264bsdDecodeInternal(storage_t *pStorage, u8 *byteStrm, u32 len,
                         else
                             return(H264BSD_PARAM_SET_ERROR);
                     }
+
+                    // LOG("spsId=%d, pStorage->activeSpsId=%d, pStorage->oldSpsId=%d", 
+                    //   spsId, pStorage->activeSpsId, pStorage->oldSpsId);
 
                     if (spsId != pStorage->activeSpsId)
                     {
@@ -359,6 +366,7 @@ u32 h264bsdDecodeInternal(storage_t *pStorage, u8 *byteStrm, u32 len,
                            (oldSPS->picHeightInMbs != newSPS->picHeightInMbs) ||
                            (oldSPS->maxDpbSize != newSPS->maxDpbSize))
                         {
+                            // LOG("pStorage->dpb->flushed = 0")
                             pStorage->dpb->flushed = 0;
                         }
                         else
@@ -425,7 +433,7 @@ u32 h264bsdDecodeInternal(storage_t *pStorage, u8 *byteStrm, u32 len,
                     return(H264BSD_ERROR);
                 }
 
-                DEBUG(("SLICE DATA, FIRST %d\n",
+                DEBUG(("SLICE DATA, FIRST %d",
                         pStorage->sliceHeader->firstMbInSlice));
                 tmp = h264bsdDecodeSliceData(&strm, pStorage,
                     pStorage->currImage, pStorage->sliceHeader);
@@ -449,7 +457,7 @@ u32 h264bsdDecodeInternal(storage_t *pStorage, u8 *byteStrm, u32 len,
                 break;
 
             default:
-                DEBUG(("NOT IMPLEMENTED YET %d\n",nalUnit.nalUnitType));
+                DEBUG(("NOT IMPLEMENTED YET %d",nalUnit.nalUnitType));
         }
     }
 
@@ -498,6 +506,11 @@ u32 h264bsdDecodeInternal(storage_t *pStorage, u8 *byteStrm, u32 len,
 }
 
 u32 h264bsdDecode(storage_t *pStorage, u8 *byteStrm, u32 len, u8 **picture, u32 *width, u32 *height) {
+    // TRACE_FUNC();
+    // LOG("len=%d", len);
+
+    // printArray(byteStrm, MIN(8, len));
+
   u32 bytesRead = 0;
   u32 retCode = 3;
   u32 readBytes = 0;
@@ -506,7 +519,9 @@ u32 h264bsdDecode(storage_t *pStorage, u8 *byteStrm, u32 len, u8 **picture, u32 
       len -= readBytes;
       byteStrm += readBytes;
       retCode = h264bsdDecodeInternal(pStorage, byteStrm, len, &readBytes);
-    } while (retCode == 0 || retCode == 2);
+      // DEBUG(("retCode=%d", retCode));
+    } while ((retCode == H264BSD_RDY || retCode == H264BSD_HDRS_RDY) && len>0);
+    // NOTE: The len is critical to making sure that all of the data is decoded...
 
     if (retCode == H264BSD_PIC_RDY) {
       *width = (pStorage->activeSps->picWidthInMbs)*16;

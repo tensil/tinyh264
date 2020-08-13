@@ -83,5 +83,7 @@ u32 h264bsdDecodeSeqParamSet(strmData_t *pStrmData,
 
 u32 h264bsdCompareSeqParamSets(seqParamSet_t *pSps1, seqParamSet_t *pSps2);
 
+void h264bsdPrintSeqParamSet(seqParamSet_t *pSps);
+
 #endif /* #ifdef H264SWDEC_SEQ_PARAM_SET_H */
 
